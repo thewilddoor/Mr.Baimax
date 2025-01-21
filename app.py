@@ -1,4 +1,5 @@
 import os
+import re
 from dotenv import load_dotenv
 import streamlit as st
 from openai import OpenAI
@@ -627,7 +628,6 @@ st.caption("✨ 体验下一代认知智能：思考、推理、创造")
 # 聊天记录容器
 chat_container = st.container()
 
-# 在消息渲染处修改为以下代码
 with chat_container:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -636,15 +636,14 @@ with chat_container:
                     f'<div style="color: #64748b; font-style: italic; border-left: 3px solid #cbd5e1; padding: 0.8rem 1rem; margin: 1rem 0;">{message["reasoning"]}</div>',
                     unsafe_allow_html=True
                 )
+            
             # 公式渲染修复处理
             content = message["content"]
             # 修复1：将 [公式] 转换为 $$公式$$
             content = content.replace(r'\[', '$$').replace(r'\]', '$$')
             # 修复2：转换equation环境为aligned环境并添加编号
-            ccontent = (
+            content = (
                 content
-                .replace(r'\[', '$$')
-                .replace(r'\]', '$$')
                 .replace(r'\begin{equation}', r'$$\begin{aligned}')
                 .replace(r'\end{equation}', r'\end{aligned}$$')
             )
@@ -652,8 +651,16 @@ with chat_container:
             if r'\begin{aligned}' in content:
                 content += r'\tag{}'  # 自动添加空标签占位
 
-            # 渲染处理后的内容
-            st.markdown(content, unsafe_allow_html=True)
+            # 新增：拆分并渲染混合内容
+            parts = re.split(r'(\$\$.*?\$\$)', content)  # 分割公式块
+            for part in parts:
+                if not part.strip():  # 跳过空内容
+                    continue
+                if part.startswith('$$') and part.endswith('$$'):
+                    formula = part[2:-2].strip()  # 提取公式内容
+                    st.latex(formula)  # 专用latex渲染
+                else:
+                    st.markdown(part, unsafe_allow_html=True)  # 常规文本渲染
 
 # 8. 智能输入区
 with st.form(key="chat_input_form", clear_on_submit=True):
