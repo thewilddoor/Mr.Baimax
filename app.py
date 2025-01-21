@@ -9,7 +9,7 @@ load_dotenv()
 
 # 2. 页面配置
 st.set_page_config(
-    page_title="DeepSeek Chat",
+    page_title="Baimax Chat",
     page_icon="🤖",
     layout="centered",
     initial_sidebar_state="expanded"
